@@ -1,0 +1,1 @@
+type FromType = "sign-in" | "sign-up"
