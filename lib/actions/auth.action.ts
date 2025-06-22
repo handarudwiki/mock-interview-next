@@ -1,7 +1,8 @@
+import { is } from './../../node_modules/acorn/dist/acorn.d';
 "use server"
 
 import { auth, db } from "@/firebase/admin";
-import { SignInParams, SignUpParans } from "@/types"
+import { SignInParams, SignUpParans, User } from "@/types"
 import { cookies } from "next/headers";
 
 
@@ -53,6 +54,8 @@ export async function setSessionCokie(idToken:string){
         expiresIn: SESSION_DURATION * 1000, // Convert seconds to milliseconds
     })
     
+    console.log("sessionCookie", sessionCookie);
+
   cookieStore.set("session", sessionCookie, {
     maxAge: SESSION_DURATION,
     httpOnly: true,
@@ -74,8 +77,8 @@ export async function signIn(params:SignInParams){
                 message: "User does not exist create an account"
             };
         }
-
-        await setSessionCokie(userRecord.uid);
+        console.log("userRecord", userRecord);
+        await setSessionCokie(idToken);
     } catch (error:any) {
         console.error("Error signing in:", error);
         
@@ -91,4 +94,34 @@ export async function signIn(params:SignInParams){
 export async function signOut() {
     const cookieStore = await cookies();
     cookieStore.delete("session")
+}
+
+export async function getCurrentSession():Promise<User | null> {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get("session")?.value;
+    if (!sessionCookie) {
+        return null;
+    }
+
+    try {
+        const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
+        
+        const userRecord = await db.collection("users").doc(decodedClaims.uid).get();
+        if (!userRecord.exists) {
+            return null;
+        }
+
+        return{
+            ...userRecord.data(),
+            id: userRecord.id,
+        } as User;
+    } catch (error:any) {
+        console.error("Error verifying session cookie:", error);
+        return null;
+    }
+}
+
+export async function isAuthenticated(): Promise<boolean> {
+    const session = await getCurrentSession();
+    return session !== null;
 }

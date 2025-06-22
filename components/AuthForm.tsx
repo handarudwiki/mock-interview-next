@@ -85,7 +85,6 @@ const AuthForm = ({type}:{type:FromType}) => {
         }
     }
   return (
-   <div className="flex items-center justify-center h-screen">
      <div className="card-border lg:min-w-[566px]">
         <div className="flex flex-col items-center gap-6 card py-14 px-10">
             <div className="flex flex-row gap-2">
@@ -140,7 +139,6 @@ const AuthForm = ({type}:{type:FromType}) => {
             </Form>
         </div>
     </div>
-   </div>
   )
 }
 

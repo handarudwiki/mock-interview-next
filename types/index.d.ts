@@ -36,3 +36,9 @@ interface SignInParams {
     email: string;
     idToken: string;
 }
+
+interface User{
+    id: string;
+    name: string;
+    email: string;
+}
