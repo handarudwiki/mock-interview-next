@@ -7,6 +7,12 @@ import{zodResolver} from "@hookform/resolvers/zod"
 import { z } from 'zod';
 import FormField from './FormField';
 import { Button } from './ui/button';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/firebase/client';
+import { signUp } from '@/lib/actions/auth.action';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+
 
 const authSchema = (type:FromType)=>{
     return z.object({
@@ -17,6 +23,7 @@ const authSchema = (type:FromType)=>{
 }
 
 const AuthForm = ({type}:{type:FromType}) => {
+    const router = useRouter()
     const formSchema = authSchema(type);
     const form = useForm<z.infer<typeof formSchema>>({
         resolver : zodResolver(formSchema),
@@ -28,6 +35,39 @@ const AuthForm = ({type}:{type:FromType}) => {
     })
     const isSignIn = type === "sign-in";
     console.log(isSignIn)
+
+    const onSubmit = async (data : z.infer<typeof formSchema>) => {
+        try {
+            if (type === "sign-up"){
+                const {name, email, password } = data
+
+                const userCredential = await createUserWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                )
+
+                const result = await signUp({
+                    email :email,
+                    name: name!,
+                    uid: userCredential.user.uid,
+                    password
+                })
+                if (!result.success){
+                    toast.error(result.message)
+                    return
+                }
+
+                toast.success("Account created successfully, please sign in")
+                router.push("/sign-in")
+            }else{
+                console.log("sign in")
+            }
+        } catch (error) {
+            console.log(error)
+            toast.error(`There was an error: ${error}`)
+        }
+    }
   return (
    <div className="flex items-center justify-center h-screen">
      <div className="card-border lg:min-w-[566px]">
@@ -43,7 +83,7 @@ const AuthForm = ({type}:{type:FromType}) => {
             </div>
             <h3 >Practive Job Interview with AI</h3>
             <Form {...form}>
-                <form action="" className='"w-full space-y-6 y-4 mt-4 form'>
+                <form className='"w-full space-y-6 y-4 mt-4 form' onSubmit={form.handleSubmit(onSubmit)}>
                     {!isSignIn && (
                         <FormField
                          control={form.control}
@@ -71,8 +111,14 @@ const AuthForm = ({type}:{type:FromType}) => {
                         placeholder='Enter your password'
                         type='password'
                     />
-                    <Button className='btn' type='submit'>
-                        {isSignIn ? "Sign In" : "Sign Up"}
+                    <Button 
+                    className='btn' 
+                    type='submit'
+                    disabled={form.formState.isSubmitting}
+                    >{
+                        form.formState.isSubmitting ? "Loading..." :
+                        isSignIn ? "Sign In" : "Sign Up"
+                    }
                     </Button>
                 </form>
             </Form>

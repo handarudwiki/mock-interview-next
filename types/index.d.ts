@@ -24,3 +24,10 @@ interface AgentProps{
 interface TechIconsProps{
     techStacks: string[];
 }
+
+interface SignUpParans {
+    uid : string;
+    name : string;
+    email : string;
+    password : string;
+}
