@@ -7,9 +7,9 @@ import{zodResolver} from "@hookform/resolvers/zod"
 import { z } from 'zod';
 import FormField from './FormField';
 import { Button } from './ui/button';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/firebase/client';
-import { signUp } from '@/lib/actions/auth.action';
+import { signIn, signUp } from '@/lib/actions/auth.action';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -62,6 +62,22 @@ const AuthForm = ({type}:{type:FromType}) => {
                 router.push("/sign-in")
             }else{
                 console.log("sign in")
+                const {email, password} = data;
+
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const idToken = await userCredential.user.getIdToken();
+                if(!idToken) {
+                    toast.error("Failed to get ID token")
+                    return;
+                }
+
+                await signIn({
+                    email,
+                    idToken
+                })
+
+                toast.success("Signed in successfully")
+                router.push("/")
             }
         } catch (error) {
             console.log(error)
@@ -81,9 +97,9 @@ const AuthForm = ({type}:{type:FromType}) => {
                 />
                 <h2 className='text-primary-100'>DwiInterview</h2>
             </div>
-            <h3 >Practive Job Interview with AI</h3>
+            <h3 >Practice Job Interview with AI</h3>
             <Form {...form}>
-                <form className='"w-full space-y-6 y-4 mt-4 form' onSubmit={form.handleSubmit(onSubmit)}>
+                <form className='"w-full space-y-6 y-4 mt-4 form' onSubmit={form.handleSubmit(onSubmit)} method='POST'>
                     {!isSignIn && (
                         <FormField
                          control={form.control}

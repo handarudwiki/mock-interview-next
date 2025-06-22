@@ -31,3 +31,8 @@ interface SignUpParans {
     email : string;
     password : string;
 }
+
+interface SignInParams {
+    email: string;
+    idToken: string;
+}
